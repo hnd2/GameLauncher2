@@ -33,6 +33,7 @@ function love.keypressed(key, scancode, isrepeat)
   end
   if key == "r" and selectedGameInfo ~= nil then
       splore:updateGame(selectedGameInfo.name)
+      gameNames = splore:getGameNames()
   end
 
   local newIndex = nil
