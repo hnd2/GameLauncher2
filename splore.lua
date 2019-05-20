@@ -3,19 +3,6 @@ commands.verbose = true
 
 local _M = {}
 
---------------------------------------------------
-local function splitString(str, div)
-  local o = {}
-  while true do
-    local pos1, pos2 = str:find(div)
-    if not pos1 then
-      o[#o + 1] = str
-      break
-    end
-    o[#o + 1], str = str:sub(1, pos1 - 1), str:sub(pos2 + 1)
-  end
-  return o
-end
 
 --------------------------------------------------
 local function isModuleExist(moduleName)
@@ -23,19 +10,6 @@ local function isModuleExist(moduleName)
   return status
 end
 
---------------------------------------------------
-local function getParentPath(path)
-  local segments = splitString(path, "/")
-  local result = nil
-  for i, segment in ipairs(segments) do
-    if i == 1 then
-      result = segment
-    elseif i ~= #segments then
-      result = result .. "/" .. segment
-    end
-  end
-  return result
-end
 
 --------------------------------------------------
 -- SploreInitOptions
@@ -148,14 +122,15 @@ function _M:loadGameList(str, pull)
 
   if isLocalFile then
     -- load local list
-    gameListPath = getParentPath(str)
-    moduleName = splitString(str, ".lua")[1]
+    gameListPath = commands.getParentPath(str)
+    moduleName = commands.splitString(str, ".lua")[1]
     moduleName = moduleName:gsub("/", ".")
   else
     -- load git list
-    gameListPath = splitString(str, "/")
+    gameListPath = commands.splitString(str, "/")
     gameListPath = self.gameListsPath .. "/" .. gameListPath[#gameListPath]
 
+    print("exist: ", commands.isDirectoryExist(gameListPath) == True)
     if not commands.isDirectoryExist(gameListPath) then
       -- clone
       if commands.gitClone(self.gameListsPath, str) ~= 0 then
@@ -184,7 +159,7 @@ function _M:loadGameList(str, pull)
   -- set game info
   for _, gameInfo in ipairs(gameInfos) do
     if gameInfo.git ~= nil then
-      local gamePath = splitString(gameInfo.git, "/")
+      local gamePath = commands.splitString(gameInfo.git, "/")
       gamePath = self.gamesPath .. "/" .. gamePath[#gamePath]
       gameInfo.gamePath = gamePath
 
@@ -209,23 +184,23 @@ function _M:updateGame(gameName)
 
   if not commands.isDirectoryExist(gameInfo.gamePath) then
     -- clone
-    local parentPath = getParentPath(gameInfo.gamePath)
+    local parentPath = commands.getParentPath(gameInfo.gamePath)
     if commands.gitClone(parentPath, gameInfo.git) ~= 0 then
-      print("Failed to clone repository: " .. str)
+      print("Failed to clone repository: " .. gameName)
       return
     end
   else
     -- pull
     if commands.gitPull(gameInfo.gamePath) ~= 0 then
-      print("Failed to pull repository: " .. str)
+      print("Failed to pull repository: " .. gameName)
       return
     end
   end
 
   -- run install script
-  if commands.isFileExist(gameInfo.gamePath .. "/install.sh") then
-    local command = "cd " .. gameInfo.gamePath .. "; ./install.sh"
-    commands.execute(command)
+  local scriptFilePath = gameInfo.gamePath .. "/install.sh"
+  if commands.isFileExist(scriptFilePath) then
+    commands.runScriptFile(scriptFilePath)
   end
 end
 
@@ -239,6 +214,7 @@ function _M:launchGame(gameName)
 
   if not commands.isDirectoryExist(gameInfo.gamePath) then
     self:updateGame(gameName)
+    print("udpated")
   end
   if commands.love(gameInfo.gamePath) == 0 then
     love.event.quit()

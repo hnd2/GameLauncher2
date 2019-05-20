@@ -23,17 +23,17 @@ function love.draw()
 end
 
 --------------------------------------------------
-function love.keypressed(key, scancode, isrepeat)
+function love.keypressed(key)
   if key == "space" or key == "z" then
     if selectedGameInfo == nil then
       splore:loadGameLists(true)
+      gameNames = splore:getGameNames()
     else
       splore:launchGame(selectedGameInfo.name)
     end
   end
   if key == "r" and selectedGameInfo ~= nil then
       splore:updateGame(selectedGameInfo.name)
-      gameNames = splore:getGameNames()
   end
 
   local newIndex = nil
