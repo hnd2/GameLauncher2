@@ -85,7 +85,12 @@ end
 --------------------------------------------------
 function _M.runScriptFile(scriptFilePath)
   local parentDirPath = _M.getParentPath(scriptFilePath)
-  local command = "cd " .. parentDirPath .. ";" .. scriptFilePath
+  local command = "cd " .. parentDirPath .. ";"
+  if _M.osType == OsType.Windows then
+    command = "powershell bash " .. scriptFilePath
+  else
+    command = command .. scriptFilePath
+  end
   if _M.verbose then
     print(command)
   end
